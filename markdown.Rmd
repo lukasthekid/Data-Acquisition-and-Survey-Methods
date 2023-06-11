@@ -9,6 +9,8 @@ output: pdf_document
 library(ggplot2)
 library(dplyr)
 library("tidyverse")
+#install.packages("gridExtra")
+library(gridExtra)
 
 ```
 
@@ -65,7 +67,7 @@ data_p = na.omit(data_p)
 
 ```
 
-
+### What was the average time required for test preparation during and before/after the pandemic (in hours)
 
 ```{r}
 #print out statistics
@@ -96,5 +98,77 @@ ggplot(data_p[-20,]) +
   labs(x = "Time Period", y = "Hours", title = "Average Test Preparation Hours Comparison") +
   scale_x_discrete(labels = c("Before" = "Before COVID-19", "During" = "During COVID-19", "After" = "After COVID-19"))
 ```
+### How many ECTS/semester did you fail on the first try during/before/after the pandemic period? (Example Answer: During the pandemic I did 4 Semesters and failed 6 ECTS)
+
+```{r}
+
+#head(data_p[c(7:12)])
+data_p <- data_p %>% 
+  mutate(performance_dur = ects.fail.dur / semesters.dur) %>%
+  mutate(performance_bef = ects.fail.bef / semesters.bef) %>%
+  mutate(performance_af = ects.fail.af / semesters.af)
+
+#print out statistics
+# Convert the data frame to long format
+data_long <- data_p %>%
+  pivot_longer(cols = c(performance_dur,performance_bef,performance_af), names_to = "Period", values_to = "Performance")
+
+# Calculate statistics for each time period
+statistics <- data_long %>%
+  group_by(Period) %>%
+  summarize(
+    Mean = mean(Performance),
+    Median = median(Performance),
+    SD = sd(Performance)
+  )
+
+# Print the formatted statistics
+print(statistics)
+
+
+# Combine the performance metrics for all periods into a single data frame
+performance <- data.frame(
+  period = rep(c("During", "Before", "After"), each = nrow(data_p)),
+  performance = c(data_p$performance_dur, data_p$performance_bef, data_p$performance_af),
+  stringsAsFactors = FALSE
+)
+
+# Create separate histograms for each period
+hist_bef <- ggplot(data_p, aes(x = performance_bef)) +
+  geom_histogram(binwidth = 2, fill = "red", alpha = 0.7, color="black") +
+  labs(x = "", y = "Count") +
+  ggtitle("Before COVID-19") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_vline(aes(xintercept = mean(performance_bef)), color = "black", linetype = "dashed")
+
+hist_dur <- ggplot(data, aes(x = performance_dur)) +
+  geom_histogram(binwidth = 2, fill = "green", alpha = 0.7, color="black") +
+  labs(x = "", y = "Count") +
+  ggtitle("During COVID-19") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_vline(aes(xintercept = mean(performance_dur)), color = "black", linetype = "dashed")
+
+hist_af <- ggplot(data, aes(x = performance_af)) +
+  geom_histogram(binwidth = 2, fill = "blue", alpha = 0.7, color="black") +
+  labs(x = "", y = "Count") +
+  ggtitle("After COVID-19") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_vline(aes(xintercept = mean(performance_af)), color = "black", linetype = "dashed")
+
+
+# Arrange the histograms in subplots
+subplot <- grid.arrange(hist_bef, hist_dur, hist_af, nrow = 1,
+                        bottom="failed ECTS / attended Semester Ratio")
+
+# Display the subplots
+subplot
+
+```
+
+
+
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
