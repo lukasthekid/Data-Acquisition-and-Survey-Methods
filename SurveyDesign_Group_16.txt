@@ -1,0 +1,53 @@
+The Impact of Online Learning on Technical Education During the Pandemic
+
+
+Research Questions: 
+1. Was there a decrease in test time preparation during the pandemic?
+2. Did the shift to online learning during the pandemic lead to fewer negative test results?
+3. Did the the pandemic lead to an increase in usage of external study materials?
+
+Survey Questions:
+Pandemic Period: (March 2020 - June 2022)
+
+
+1. What was the average time required for test preparation during and before/after the pandemic (in hours):
+(Example answer) 
+During: (time in hours) 
+Before: (time in hours) 
+After: (time in hours) 
+
+
+(If before/after doesn’t apply for you then leave that section empty)
+
+
+2. How many ECTS/semester did you fail on the first try during/before/after the pandemic period?
+(Example Answer: During the pandemic I did 4 Semesters and failed 6 ECTS)
+During: 6/4 
+Before: 2/3
+After: 0/2
+
+(If before/after doesn’t apply for you then leave that section empty)
+
+
+3. What was your main source of learning for Test preparation during/before/after the pandemic?
+(Example Answer, 
+
+CATEGORICAL: External (YouTube, Wikis) OR 
+	     Internal (Slides, Lecture Recordings etc.)) 
+
+During: External
+Before: Internal
+After: External
+
+(If before/after doesn’t apply for you then leave that section empty)
+
+4. How old are you?
+5. What is your gender?
+   1. Male
+   2. Female
+   3. Non-Binary
+6. What are your completed/ongoing academic programmes (Insert time period for each programme)
+(Example Answer) 
+
+Sept 2019 - Jan 2023: BSc. Business Informatics (Vienna University of Technology)
+March 2023 - Ongoing: MSc. Data Science (Vienna University of Technology)

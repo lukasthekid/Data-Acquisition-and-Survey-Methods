@@ -1,0 +1,100 @@
+---
+title: "Survey Markdown"
+author: "Group 16"
+date: "2023-06-11"
+output: pdf_document
+---
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library("tidyverse")
+
+```
+
+# The Impact of Online Learning on Technical Education During the Pandemic
+
+
+
+```{r}
+data <- read.csv("group_16.csv", header= TRUE, sep=";")
+# preprocessing
+
+# Split the string into parts
+split_parts <- strsplit(data$Antwort.1, "; ")
+split_parts2 <- strsplit(data$Antwort.2, "; ")
+split_parts3 <- strsplit(data$Antwort.3, "; ")
+
+# Create new columns based on split parts
+new_columns <- t(sapply(split_parts, function(x) {
+  parts <- strsplit(x, ": ")
+  setNames(as.numeric(sapply(parts, function(y) y[2])), sapply(parts, function(y) paste0("Antwort1", y[1])))
+}))
+
+new_columns2 <- t(sapply(split_parts2, function(x) {
+  parts <- strsplit(x, ": ")
+  setNames(as.numeric(sapply(parts, function(y) y[2])), sapply(parts, function(y) paste0("Antwort2", y[1])))
+}))
+
+new_columns3 <- t(sapply(split_parts3, function(x) {
+  parts <- strsplit(x, ": ")
+  setNames(sapply(parts, function(y) y[2]), sapply(parts, function(y) paste0("Antwort3", y[1])))
+}))
+
+# Combine the new columns with the original data frame
+data_p <- cbind(data[c(1,2,3)], new_columns, new_columns2, new_columns3)
+
+# Rename the columns
+colnames(data_p) <- c("gender", "age", "academic.program",
+                    "test.prep.dur", "test.prep.bef","test.prep.af","ects.fail.dur","semesters.dur",
+                    "ects.fail.bef","semesters.bef","ects.fail.af","semesters.af",
+                    "source.dur","source.bef","source.af")
+
+
+# Replace values based on condition
+data_p$academic.program <- ifelse(grepl("Data Science", data_p$academic.program), "Data Science / MSc / TU WIen", data_p$academic.program)
+
+data_p$gender = as.factor(data_p$gender)
+data_p$academic.program = as.factor(data_p$academic.program)
+data_p$source.dur = as.factor(data_p$source.dur)
+data_p$source.bef = as.factor(data_p$source.bef)
+data_p$source.af = as.factor(data_p$source.af)
+
+#remove NaN
+data_p = na.omit(data_p)
+
+```
+
+
+
+```{r}
+#print out statistics
+# Convert the data frame to long format
+data_long <- data_p %>%
+  pivot_longer(cols = c(test.prep.bef,test.prep.dur,test.prep.af), names_to = "Period", values_to = "Hours")
+
+# Calculate statistics for each time period
+statistics <- data_long %>%
+  group_by(Period) %>%
+  summarize(
+    Mean = mean(Hours),
+    Median = median(Hours),
+    SD = sd(Hours)
+  )
+
+# Print the formatted statistics
+print(statistics)
+
+
+
+# Create a boxplot for each column
+# we exclude row 21 because of unrealistic values
+ggplot(data_p[-20,]) +
+  geom_boxplot(aes(x = "Before", y = test.prep.bef), fill = "lightblue", color = "black") +
+  geom_boxplot(aes(x = "During", y = test.prep.dur), fill = "lightgreen", color = "black") +
+  geom_boxplot(aes(x = "After", y = test.prep.af), fill = "lightyellow", color = "black") +
+  labs(x = "Time Period", y = "Hours", title = "Average Test Preparation Hours Comparison") +
+  scale_x_discrete(labels = c("Before" = "Before COVID-19", "During" = "During COVID-19", "After" = "After COVID-19"))
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
