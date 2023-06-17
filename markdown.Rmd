@@ -69,6 +69,21 @@ data_p = na.omit(data_p)
 
 ### What was the average time required for test preparation during and before/after the pandemic (in hours)
 
+1. `pivot_longer`: This function is used to convert the data frame `data_p` from wide format to long format. It takes three columns (`test.prep.bef`, `test.prep.dur`, `test.prep.af`) and pivots them into two columns: `Period` and `Hours`. The `Period` column contains the names of the original three columns, and the `Hours` column contains the corresponding values.
+
+2. `group_by` and `summarize`: These functions are used together to calculate statistics for each time period (`Before`, `During`, `After`). The `group_by` function groups the data by the `Period` column, and the `summarize` function calculates three statistics: `Mean` (average), `Median`, and `SD` (standard deviation) of the `Hours` column within each time period.
+
+3. `print`: This function is used to print the formatted statistics to the console.
+
+4. `ggplot`: This function is used to create a boxplot visualization. It takes the `data_p` data frame (excluding the 21st row) as input.
+
+5. `geom_boxplot`: These functions are used to add boxplots to the plot for each time period. They specify the aesthetics (`aes`) mapping the x-axis to the time period (`"Before"`, `"During"`, `"After"`) and the y-axis to the corresponding columns (`test.prep.bef`, `test.prep.dur`, `test.prep.af`). The `fill` parameter sets the colors for the boxplots, and the `color` parameter sets the color for the outline.
+
+6. `labs`: This function is used to set the labels for the x-axis, y-axis, and title of the plot.
+
+7. `scale_x_discrete`: This function is used to set custom labels for the x-axis, mapping the original time period names to more descriptive labels.
+
+
 ```{r}
 #print out statistics
 # Convert the data frame to long format
@@ -98,7 +113,33 @@ ggplot(data_p[-20,]) +
   labs(x = "Time Period", y = "Hours", title = "Average Test Preparation Hours Comparison") +
   scale_x_discrete(labels = c("Before" = "Before COVID-19", "During" = "During COVID-19", "After" = "After COVID-19"))
 ```
+
+Based on the graph, we observe that the average test preparation before COVID was the highest, with an average of 29.4 hours per test. The median for this period was also the highest at 20 hours, indicating a wider range of preparation times. Notably, 25% of the students required more than 30 hours of learning time per test during this period.
+
+During COVID, there was a significant decrease in preparation time, which suggests the possibility of more efficient study practices (assuming successful exams during that period). This observation is interesting considering that the university was closed and access to learning materials was limited. 
+
+After the pandemic, we can see a median learning time of 15 hours. This trend indicates that the shift to online lectures and 24/7 availability of uploaded materials contributed to increased studying efficiency during the COVID pandemic.
+
+
 ### How many ECTS/semester did you fail on the first try during/before/after the pandemic period? (Example Answer: During the pandemic I did 4 Semesters and failed 6 ECTS)
+
+1. `mutate`: This function is used multiple times to create new columns in the `data_p` data frame. The `mutate` function calculates and assigns values to the new columns `performance_dur`, `performance_bef`, and `performance_af`. These columns are derived by dividing the corresponding columns (`ects.fail.dur`, `ects.fail.bef`, `ects.fail.af`) by the corresponding columns (`semesters.dur`, `semesters.bef`, `semesters.af`).
+
+2. `summarise`: This function is used to calculate summary statistics for the `data_p` data frame. It computes the mean of the `performance_dur`, `performance_bef`, and `performance_af` columns while excluding any non-finite values (`is.finite`) and removing any missing values (`na.rm = TRUE`). The resulting statistics are assigned to the `stats` data frame.
+
+3. `data.frame`: This function is used to create a new data frame called `performance`. It combines the performance metrics for all periods (during, before, after) into a single data frame with two columns: `period` and `performance`. The `period` column is created using the `rep` function to repeat the time period labels, and the `performance` column combines the corresponding performance values from `data_p`. The argument `stringsAsFactors = FALSE` ensures that character vectors are not automatically converted to factors.
+
+4. `geom_histogram`: These functions are used to create histograms for each period using the `ggplot` package. They specify the aesthetics (`aes`) mapping the x-axis to the respective performance columns (`performance_bef`, `performance_dur`, `performance_af`). The `binwidth` parameter determines the width of the bins in the histogram. The `fill` parameter sets the fill color of the histogram bars, and the `alpha` parameter controls the transparency. The `color` parameter sets the color of the outline of the bars.
+
+5. `labs`: This function is used to set the x-axis and y-axis labels for the histograms.
+
+6. `ggtitle`: This function is used to set the title of each histogram.
+
+7. `theme_minimal`: This function is used to set a minimalistic theme for the histograms.
+
+8. `geom_vline`: These functions are used to add vertical dashed lines to each histogram, indicating the mean value of the respective performance column. The `xintercept` aesthetic specifies the x-coordinate of the vertical line.
+
+9. `grid.arrange`: This function is used to arrange the histograms in subplots. It takes the individual histograms (`hist_bef`, `hist_dur`, `hist_af`) as arguments and arranges them in a single row (`nrow = 1`). The `bottom` parameter is used to add a bottom label to the subplot.
 
 ```{r}
 
@@ -160,6 +201,10 @@ subplot <- grid.arrange(hist_bef, hist_dur, hist_af, nrow = 1,
 subplot
 
 ```
+In this plot, we analyze the performance of students in three periods. We examine the ratio between failed semesters and attended semesters for each student in each period. If a student did not study before COVID, their score would be NaN and therefore not included in the graph. Thus, we only observe data from students who studied during a particular period. A score of zero indicates that no ECTS (European Credit Transfer and Accumulation System) were failed during the attended semesters.
+
+The average performance ratio before COVID was 1.13, during COVID it was 1.0, and after COVID it was 1.11. The performance during COVID was the best. However, we notice an improvement in performance when comparing the data from before and after COVID. It is important to note that the chart depicting the data from before COVID is not as well-populated as the others. This is because only a few students started their studies during COVID. Nonetheless, we observe that over five students achieved a performance ratio of about 2, and we also see a few students with a similar performance ratio after COVID.
+
 
 ```{r}
 # Calculate the frequency of each label
@@ -186,6 +231,7 @@ pie_plot <- ggplot(plot_data, aes(x = "", y = proportions.Freq, fill = labels)) 
   coord_polar("y", start = 0) +
   #scale_fill_discrete(name = "Labels") +
   labs(title = "Before Corona") +
+  geom_text(aes(label = paste0(round(proportions.Freq * 100, 2), "%")), position = position_stack(vjust = 0.5))+
   theme_void()+
   theme(legend.position = "none")
 
@@ -193,6 +239,7 @@ pie_plot2 <- ggplot(plot_data2, aes(x = "", y = proportions.Freq, fill = labels)
   geom_bar(stat = "identity", width = 1, color="white") +
   coord_polar("y", start = 0) +
   #scale_fill_discrete(name = "Labels") +
+  geom_text(aes(label = paste0(round(proportions.Freq * 100, 2), "%")), position = position_stack(vjust = 0.5))+
   labs(title = "During Corona") +
   theme_void()+
   theme(legend.position = "none")
@@ -201,6 +248,7 @@ pie_plot3 <- ggplot(plot_data3, aes(x = "", y = proportions.Freq, fill = labels)
   geom_bar(stat = "identity", width = 1, color="white") +
   coord_polar("y", start = 0) +
   scale_fill_discrete(name = "Labels") +
+  geom_text(aes(label = paste0(round(proportions.Freq * 100, 2), "%")), position = position_stack(vjust = 0.5))+
   labs(title = "After Corona") +
   theme_void()
   #theme(legend.position = "none")
@@ -213,6 +261,6 @@ subplot <- grid.arrange(pie_plot,pie_plot2,pie_plot3, nrow = 1,
 subplot
 
 ```
+In this pie chart, we observe a noticeable rise in the demand for external lecture data, such as YouTube videos or online papers. Before COVID, only 18.92% of students primarily consumed external learning material not provided by the university. However, during COVID, this percentage increased significantly to over 37.84%. Even after COVID, a substantial portion, 24.32%, continued to rely on external sources.
 
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+This increase in demand for external material, coupled with the observed improvement in study performance and the perceived time efficiency during the COVID period, suggests that these external resources were more beneficial to students than the lecture materials provided by professors.
