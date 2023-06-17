@@ -264,3 +264,87 @@ subplot
 In this pie chart, we observe a noticeable rise in the demand for external lecture data, such as YouTube videos or online papers. Before COVID, only 18.92% of students primarily consumed external learning material not provided by the university. However, during COVID, this percentage increased significantly to over 37.84%. Even after COVID, a substantial portion, 24.32%, continued to rely on external sources.
 
 This increase in demand for external material, coupled with the observed improvement in study performance and the perceived time efficiency during the COVID period, suggests that these external resources were more beneficial to students than the lecture materials provided by professors.
+
+
+## Descriptive Inference Summary
+
+### Preparation Time
+To show the differences of preparation time between before, during and after COVID, blocks of <=5, <=10, etc. hours are created.
+To emphasize on the changes a table showing the difference per person is also created.
+```{r}
+# Inferential summary for preparation times
+# | <=10  | <=20h | <=30h | <=40h |
+# before c
+# during c
+intervals = c(0,10, 20, 30, 40, 50, 60, 70, 80, Inf)
+
+cnt_bef <- data_p %>%
+       select(test.prep.bef) %>%
+        group_by(interval_bef = cut(test.prep.bef, breaks = intervals, right=FALSE)) %>%
+        count() %>%
+        spread(interval_bef, n)
+
+cnt_dur <- data_p %>%
+        select(test.prep.dur) %>%
+        group_by(interval_dur = cut(test.prep.dur, breaks = intervals, right=FALSE)) %>%
+        count() %>%
+        spread(interval_dur, n)
+
+cnt_af <- data_p %>%
+        select(test.prep.af) %>%
+        group_by(interval_af = cut(test.prep.af, breaks = intervals, right=FALSE)) %>%
+        count() %>%
+        spread(interval_af, n)
+
+
+
+appended <- bind_rows(cnt_bef, cnt_dur, cnt_af) %>%
+        mutate(index = c("Before COVID", "During COVID", "After COVID"))
+
+rownames(appended) <- c("Before COVID", "During COVID", "After COVID")
+print(appended)
+```
+The amount of people who prepared for the exam for >= 30 hours decreased during covid considerably from 12 to 6 and stayed down after covid at 6.
+This could be caused by making videos available during covid, which stayed available also after covid. If the difference is significant will be shown by a hypothesis test.
+
+```{r}
+intervals_diff = c(-Inf, -20, -10, -5, 0, 1, 5, 10, 20, Inf)
+
+# Difference in preparation time
+prep_diff <- data_p %>%
+        select(test.prep.bef, test.prep.dur, test.prep.af) %>%
+        mutate(diff_dur = test.prep.dur - test.prep.bef,
+               diff_af = test.prep.af - test.prep.bef) %>%
+        select(diff_dur, diff_af)
+# prep_diff
+
+cnt_diff_dur <- prep_diff %>%
+        select(diff_dur) %>%
+        group_by(interval_dur = cut(diff_dur, breaks = intervals_diff, right=FALSE)) %>%
+        count() %>%
+        spread(interval_dur, n)
+
+cnt_diff_af <- prep_diff %>%
+        select(diff_af) %>%
+        group_by(interval_af = cut(diff_af, breaks = intervals_diff, right=FALSE)) %>%
+        count() %>%
+        spread(interval_af, n)
+
+
+appended_diff <- bind_rows(cnt_diff_dur, cnt_diff_af) %>%
+        mutate(index = c("During COVID", "After COVID"))
+
+appended_diff
+```
+
+```{r}
+# Inferential summary for performance
+```
+
+```{r}
+# Inferential summary for learning sources
+
+```
+
+```{r}
+```
