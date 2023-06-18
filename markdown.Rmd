@@ -11,6 +11,9 @@ library(dplyr)
 library("tidyverse")
 #install.packages("gridExtra")
 library(gridExtra)
+library(gt)
+library(scales)
+library(readr)
 
 ```
 
@@ -272,11 +275,9 @@ This increase in demand for external material, coupled with the observed improve
 To show the differences of preparation time between before, during and after COVID, blocks of <=5, <=10, etc. hours are created.
 To emphasize on the changes a table showing the difference per person is also created.
 ```{r}
-# Inferential summary for preparation times
-# | <=10  | <=20h | <=30h | <=40h |
-# before c
-# during c
 intervals = c(0,10, 20, 30, 40, 50, 60, 70, 80, Inf)
+
+summary_palette = c("white", "darkblue")
 
 cnt_bef <- data_p %>%
        select(test.prep.bef) %>%
@@ -298,11 +299,25 @@ cnt_af <- data_p %>%
 
 
 
-appended <- bind_rows(cnt_bef, cnt_dur, cnt_af) %>%
-        mutate(index = c("Before COVID", "During COVID", "After COVID"))
+inferential_summary_preparation <- bind_rows(cnt_bef, cnt_dur, cnt_af) %>%
+        mutate(index = c("Before COVID", "During COVID", "After COVID")) %>%
+        replace(is.na(.), 0) %>%
+        select(index, "[0,10)", "[10,20)", "[20,30)", "[30,40)", "[40,50)", "[50,60)", "[60,70)", "[70,80)", "[80,Inf)")
 
-rownames(appended) <- c("Before COVID", "During COVID", "After COVID")
-print(appended)
+inferential_summary_preparation %>%
+        gt() %>%
+        tab_header(
+                title = md("**Preparation Time**"),
+                subtitle = md("*The table shows the amount of people who prepared for the exam for x hours in 10 hour intervals*")
+        ) %>%
+        data_color(
+                columns = 2:10,
+                colors = col_numeric(
+                  palette = summary_palette,
+                  domain = c(0, 13)
+                )
+        )
+
 ```
 The amount of people who prepared for the exam for >= 30 hours decreased during covid considerably from 12 to 6 and stayed down after covid at 6.
 This could be caused by making videos available during covid, which stayed available also after covid. If the difference is significant will be shown by a hypothesis test.
@@ -331,17 +346,30 @@ cnt_diff_af <- prep_diff %>%
         spread(interval_af, n)
 
 
-appended_diff <- bind_rows(cnt_diff_dur, cnt_diff_af) %>%
-        mutate(index = c("Difference During COVID", "Difference After COVID"))
+inferential_summary_preparation_diff <- bind_rows(cnt_diff_dur, cnt_diff_af) %>%
+        mutate(index = c("Difference During COVID", "Difference After COVID")) %>%
+        replace(is.na(.), 0) %>%
+        select(index, everything())
 
-appended_diff
+inferential_summary_preparation_diff %>%
+        gt() %>%
+        tab_header(
+                title = md("**Preparation Time**"),
+                subtitle = md("*Amount of students who prepared for the exam for x hours*")
+        ) %>%
+        data_color(
+                columns = 2:10,
+                colors = col_numeric(
+                  palette = summary_palette,
+                  domain = c(0, 17)
+                )
+        )
 ```
 
 ```{r}
 # Inferential summary for performance
+intervals = c(0, 1, 2, 3, 4, 5, 6, 7, Inf)
 
-intervals = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, Inf)
-intervals_diff = c(-Inf, -5, -3, -2, -1, 0, 1, 2, 3, 5, Inf)
 summary_performance <- data_p %>%
         select(performance_bef, performance_dur, performance_af) %>%
         mutate(perf_diff_dur = performance_dur - performance_bef,
@@ -366,6 +394,32 @@ perf_cnt_af <- summary_performance %>%
         count() %>%
         spread(interval_af, n)
 
+
+inferential_summary_perf <- bind_rows(perf_cnt_bef, perf_cnt_dur, perf_cnt_af) %>%
+        mutate(index = c("Before COVID", "During COVID", "After COVID")) %>%
+        replace(is.na(.), 0) %>%
+        select(index, "[0,1)", "[1,2)", "[2,3)", "[3,4)", "[4,5)", "[5,6)", "[6,7)", "[7,Inf)", everything())
+
+
+inferential_summary_perf %>%
+    gt() %>%
+    tab_header(
+        title = md("**Performance**"),
+        subtitle = md("*Amount of Students who failed x ECTS*")
+    ) %>%
+    data_color(
+        columns = 2:9,
+        colors = col_numeric(
+          palette = summary_palette,
+          domain = c(0, 16)
+        )
+    )
+```
+
+
+```{r}
+intervals_diff = c(-Inf, -5, -2, -1, 0, 1, 2, 5, Inf)
+
 perf_cnt_diff_dur <- summary_performance %>%
         select(perf_diff_dur) %>%
         group_by(interval_dur = cut(perf_diff_dur, breaks = intervals_diff, right=FALSE)) %>%
@@ -378,15 +432,25 @@ perf_cnt_diff_af <- summary_performance %>%
         count() %>%
         spread(interval_af, n)
 
-
-inferential_summary_perf <- bind_rows(perf_cnt_bef, perf_cnt_dur, perf_cnt_af) %>%
-        mutate(index = c("Before COVID", "During COVID", "After COVID"))
-
 inferential_summary_perf_diff <- bind_rows(perf_cnt_diff_dur, perf_cnt_diff_af) %>%
-        mutate(index = c("Difference During COVID", "Difference After COVID"))
+        replace(is.na(.), 0) %>%
+        mutate(index = c("Difference During COVID", "Difference After COVID")) %>%
+        select(index, "[-Inf,-5)", "[-5,-2)", everything())
 
-inferential_summary_perf
-inferential_summary_perf_diff
+inferential_summary_perf_diff %>%
+    gt() %>%
+    tab_header(
+        title = md("**Performance Difference**"),
+        subtitle = md("*Difference in ECTS for during and after COVID with base before COVID*")
+    ) %>%
+    data_color(
+        columns = 2:9,
+        colors = col_numeric(
+          palette = summary_palette,
+          domain = c(0, 13)
+        )
+    )
+
 ```
 
 ```{r}
@@ -416,12 +480,30 @@ inferential_summary_sources <- bind_rows(source_cnt_bef, source_cnt_dur, source_
         mutate(index = c("Before COVID", "During COVID", "After COVID")) %>%
         select(index, External, Internal)
 
+inferential_summary_sources %>%
+    gt() %>%
+        tab_header(
+                title = md("**Learning Sources**"),
+                subtitle = md("*Amount of students who used x learning source*")
+        ) %>%
+        data_color(
+                columns = 2:3,
+                colors = col_numeric(
+                  palette = summary_palette,
+                  domain = c(0, 30)
+                )
+        )
+
+```
+
+```{r}
+
 sources_diff_dur <- summary_learningsources %>%
         group_by(source.bef, source.dur) %>%
         count() %>%
         mutate(from = source.bef,
                to = source.dur,
-                during = n) %>%
+               during = n) %>%
         ungroup() %>%
         select(from, to, during)
 
@@ -434,14 +516,21 @@ sources_diff_af <- summary_learningsources %>%
         ungroup() %>%
         select(from, to, after)
 
-sources_diff_combined <- bind_cols(sources_diff_dur %>% select(during), sources_diff_af) %>%
+inferential_summary_sources_diff<- bind_cols(sources_diff_dur %>% select(during), sources_diff_af) %>%
         select(from, to, during, after)
 
-inferential_summary_sources
-sources_diff_combined
+inferential_summary_sources_diff %>%
+    gt() %>%
+        tab_header(
+                title = md("**Learning Sources Difference**"),
+                subtitle = md("*Amount of students who switched learning source during and after COVID with base before COVID*")
+        ) %>%
+        data_color(
+                columns = 3:4,
+                colors = col_numeric(
+                  palette = summary_palette,
+                  domain = c(0, 30)
+                )
+        )
 
-
-```
-
-```{r}
 ```
