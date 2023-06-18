@@ -355,7 +355,7 @@ inferential_summary_preparation_diff %>%
         gt() %>%
         tab_header(
                 title = md("**Preparation Time**"),
-                subtitle = md("*Amount of students who prepared for the exam for x hours*")
+                subtitle = md("*Amount of students who prepared x hours more/less for an exam for during and after COVID, base before COVID*")
         ) %>%
         data_color(
                 columns = 2:10,
