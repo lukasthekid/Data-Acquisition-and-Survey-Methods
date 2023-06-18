@@ -14,7 +14,6 @@ library(gridExtra)
 library(gt)
 library(scales)
 library(readr)
-
 ```
 
 # The Impact of Online Learning on Technical Education During the Pandemic
@@ -272,8 +271,9 @@ This increase in demand for external material, coupled with the observed improve
 ## Descriptive Inference Summary
 
 ### Preparation Time
-To show the differences of preparation time between before, during and after COVID, blocks of <=5, <=10, etc. hours are created.
-To emphasize on the changes a table showing the difference per person is also created.
+To show the differences of preparation time between before, during and after COVID, blocks (intervals) of <=10, <=20, etc. hours are created.
+To emphasize the differences between before during and after covid, difference tables are created showing how the behaviour
+for students changed compared to before COVID.
 ```{r}
 intervals = c(0,10, 20, 30, 40, 50, 60, 70, 80, Inf)
 
@@ -308,15 +308,17 @@ inferential_summary_preparation %>%
         gt() %>%
         tab_header(
                 title = md("**Preparation Time**"),
-                subtitle = md("*The table shows the amount of people who prepared for the exam for x hours in 10 hour intervals*")
+                subtitle = md("*Amount of students who prepared for the exam for x hours*")
         ) %>%
         data_color(
                 columns = 2:10,
-                colors = col_numeric(
+                fn = col_numeric(
                   palette = summary_palette,
                   domain = c(0, 13)
                 )
         )
+
+
 
 ```
 The amount of people who prepared for the exam for >= 30 hours decreased during covid considerably from 12 to 6 and stayed down after covid at 6.
@@ -354,17 +356,26 @@ inferential_summary_preparation_diff <- bind_rows(cnt_diff_dur, cnt_diff_af) %>%
 inferential_summary_preparation_diff %>%
         gt() %>%
         tab_header(
-                title = md("**Preparation Time**"),
+                title = md("**Preparation Time Difference**"),
                 subtitle = md("*Amount of students who prepared x hours more/less for an exam for during and after COVID, base before COVID*")
         ) %>%
         data_color(
                 columns = 2:10,
-                colors = col_numeric(
+                fn = col_numeric(
                   palette = summary_palette,
                   domain = c(0, 17)
                 )
         )
 ```
+
+The differences show the already suspected shift of less preparation time during COVID even better. Those benefits seem
+to have stayed after COVID in a reduced extend for some people, while some have gone back to their old values.
+
+
+### Failure Rates
+
+The Failure Rates show how many ECTS have been failed per semester. The summary tables will show how the failure rates
+differed during and after COVID compared to before.
 
 ```{r}
 # Inferential summary for performance
@@ -404,18 +415,20 @@ inferential_summary_perf <- bind_rows(perf_cnt_bef, perf_cnt_dur, perf_cnt_af) %
 inferential_summary_perf %>%
     gt() %>%
     tab_header(
-        title = md("**Performance**"),
+        title = md("**Failure Rate**"),
         subtitle = md("*Amount of Students who failed x ECTS*")
     ) %>%
     data_color(
         columns = 2:9,
-        colors = col_numeric(
+        fn = col_numeric(
           palette = summary_palette,
           domain = c(0, 16)
         )
     )
 ```
 
+Failure rates didn't change much during COVID with a low downward shift of fewer people with zero failures even after COVID.
+This could be caused by simpler exams during COVID or simply by difficulties getting back to the old presence mode.
 
 ```{r}
 intervals_diff = c(-Inf, -5, -2, -1, 0, 1, 2, 5, Inf)
@@ -440,12 +453,12 @@ inferential_summary_perf_diff <- bind_rows(perf_cnt_diff_dur, perf_cnt_diff_af) 
 inferential_summary_perf_diff %>%
     gt() %>%
     tab_header(
-        title = md("**Performance Difference**"),
-        subtitle = md("*Difference in ECTS for during and after COVID with base before COVID*")
+        title = md("**Failure Rate Difference**"),
+        subtitle = md("*Amount of students with x different failed ECTS per semester for during and after COVID with base before COVID*")
     ) %>%
     data_color(
         columns = 2:9,
-        colors = col_numeric(
+        fn = col_numeric(
           palette = summary_palette,
           domain = c(0, 13)
         )
@@ -453,6 +466,11 @@ inferential_summary_perf_diff %>%
 
 ```
 
+The Failure Rate difference additionally show a relatively high fluctuation of failed ECTS, it seems that some students had
+difficulties adapting to the new situation, while others found it easier to study during COVID.
+
+### Learning Sources
+A summary for the main learning sources will be shown and how they changed during and after COVID compared to before.
 ```{r}
 # Inferential summary for learning sources
 summary_learningsources <- data_p %>%
@@ -488,7 +506,7 @@ inferential_summary_sources %>%
         ) %>%
         data_color(
                 columns = 2:3,
-                colors = col_numeric(
+                fn = col_numeric(
                   palette = summary_palette,
                   domain = c(0, 30)
                 )
@@ -496,6 +514,9 @@ inferential_summary_sources %>%
 
 ```
 
+As seen in the table the learning sources seem to have shifted from to more external sources during COVID, going back
+to the old distribution after COVID. This could be caused by the lack of presence lectures and the need to study more on
+your own, as internal material supplied by the university (lectures, etc.) was missing.
 ```{r}
 
 sources_diff_dur <- summary_learningsources %>%
@@ -527,10 +548,16 @@ inferential_summary_sources_diff %>%
         ) %>%
         data_color(
                 columns = 3:4,
-                colors = col_numeric(
+                fn = col_numeric(
                   palette = summary_palette,
-                  domain = c(0, 30)
+                  domain = c(0, 25)
                 )
         )
 
 ```
+
+As already expected by the last table students either stayed on external learning sources, if they already preferred them
+pre COVID or were likely to switch to external sources during COVID otherwise with 8 students switching from internal sources
+to external ones compared to 1 student switching from external sources to internal ones during COVID. After COVID the situation
+normalized itself partly with some students staying on external sources.
+
