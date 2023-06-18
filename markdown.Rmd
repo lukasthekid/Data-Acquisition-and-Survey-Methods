@@ -25,6 +25,10 @@ library(readr)
 data <- read.csv("group_16.csv", header= TRUE, sep=";")
 # preprocessing
 
+# remove student with 300 hours prepr time
+
+data <- data[-21, ]
+
 # Split the string into parts
 split_parts <- strsplit(data$Antwort.1, "; ")
 split_parts2 <- strsplit(data$Antwort.2, "; ")
@@ -64,6 +68,9 @@ data_p$academic.program = as.factor(data_p$academic.program)
 data_p$source.dur = as.factor(data_p$source.dur)
 data_p$source.bef = as.factor(data_p$source.bef)
 data_p$source.af = as.factor(data_p$source.af)
+
+data_p[c(5,38), c("ects.fail.dur", "ects.fail.bef", "ects.fail.af", 
+                  "semesters.dur", "semesters.bef", "semesters.af")] <- NA
 
 #remove NaN
 data_p = na.omit(data_p)
@@ -275,7 +282,7 @@ This increase in demand for external material, coupled with the observed improve
 To show the differences of preparation time between before, during and after COVID, blocks of <=5, <=10, etc. hours are created.
 To emphasize on the changes a table showing the difference per person is also created.
 ```{r}
-intervals = c(0,10, 20, 30, 40, 50, 60, 70, 80, Inf)
+intervals = c(0,10, 20, 30, 40, 50, 60, 70, Inf)
 
 summary_palette = c("white", "darkblue")
 
@@ -302,7 +309,7 @@ cnt_af <- data_p %>%
 inferential_summary_preparation <- bind_rows(cnt_bef, cnt_dur, cnt_af) %>%
         mutate(index = c("Before COVID", "During COVID", "After COVID")) %>%
         replace(is.na(.), 0) %>%
-        select(index, "[0,10)", "[10,20)", "[20,30)", "[30,40)", "[40,50)", "[50,60)", "[60,70)", "[70,80)", "[80,Inf)")
+        select(index, "[0,10)", "[10,20)", "[20,30)", "[30,40)", "[40,50)", "[50,60)", "[60,70)", "[70,Inf)")
 
 inferential_summary_preparation %>%
         gt() %>%
@@ -311,7 +318,7 @@ inferential_summary_preparation %>%
                 subtitle = md("*The table shows the amount of people who prepared for the exam for x hours in 10 hour intervals*")
         ) %>%
         data_color(
-                columns = 2:10,
+                columns = 2:9,
                 colors = col_numeric(
                   palette = summary_palette,
                   domain = c(0, 13)
@@ -534,3 +541,70 @@ inferential_summary_sources_diff %>%
         )
 
 ```
+
+# Inference
+
+## Prep time
+
+```{r}
+shapiro.test(data_p$test.prep.bef)
+shapiro.test(data_p$test.prep.af)
+shapiro.test(data_p$test.prep.dur)
+```
+
+The tests tell us that none of the periods is normally distributed which we should keep in mind when choosing, what kind of test we should use. We can use the Kruskal-Wallis test to check for significant changes in medians between the three groups.
+
+In the analysis of multiple groups, it's imperative to control for the multiple comparisons problem. This statistical issue arises when multiple pairwise tests are conducted simultaneously. With an increased number of tests, there's an elevated probability of a Type I error -- falsely identifying a significant difference when there isn't one.
+
+The Kruskal-Wallis test offers an effective solution to this problem. Rather than making pairwise comparisons, this test considers all groups simultaneously and evaluates the overall null hypothesis: the assertion that all groups originate from the same population, or equivalently, their medians are identical.
+
+The primary advantage of the Kruskal-Wallis test is that it provides a holistic view of the dataset and determines if there's a significant difference in the medians of three or more independent groups. This approach avoids inflating the Type I error rate, as it's a single test. If the Kruskal-Wallis test result is significant, it implies that at least one group diverges from the others. Subsequent pairwise comparisons can then be conducted to identify specifically which groups exhibit a significant difference.
+
+Applying the Kruskal-Wallis test before performing pairwise comparisons ensures that we only delve into the specifics if there's substantial evidence of a difference among the groups. This stepwise procedure effectively controls the Type I error rate and mitigates the risks associated with the multiple comparisons problem.
+
+```{r}
+kruskal.test(list(data_p$test.prep.bef, data_p$test.prep.dur, data_p$test.prep.af))
+```
+
+Based on the Kruskal-Wallis test we conclude that there is no significant shift in the medians between the groups. So there are no significant differences between study times for each period
+
+## Performance
+
+```{r}
+data_p_noinf <- subset(data_p, !is.infinite(data_p[, "performance_dur"]))
+data_p_noinf <- subset(data_p_noinf, !is.infinite(data_p_noinf[, "performance_bef"]))
+data_p_noinf <- subset(data_p_noinf, !is.infinite(data_p_noinf[, "performance_af"]))
+data_p_noinf <- data_p_noinf[complete.cases(data_p_noinf[, c("performance_bef", "performance_dur", "performance_af")]), ]
+```
+
+
+```{r}
+shapiro.test(data_p_noinf$performance_dur)
+shapiro.test(data_p_noinf$performance_bef)
+shapiro.test(data_p_noinf$performance_af)
+```
+
+Here we also see data that is not normally distributed so we can use the kruskal wallis test again.
+
+```{r}
+kruskal.test(list(data_p_noinf$performance_bef, data_p_noinf$performance_af, data_p_noinf$performance_dur))
+```
+
+The kruskal wallis  rejects the hypothesis that there is a difference between the time periods (before, during, after covid).
+
+## Materials used
+
+```{r}
+data_materials <- data_p %>%
+     pivot_longer(
+         cols = c("source.dur", "source.bef", "source.af"), 
+         names_to = "period",
+         values_to = "source"
+     )
+
+contingency_table <- table(data_materials$period, data_materials$source)
+chisq.test(contingency_table)
+```
+
+The p-value suggests that there is no association between the period and sources used for studying.
+
