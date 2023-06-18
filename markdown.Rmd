@@ -341,6 +341,7 @@ appended_diff
 # Inferential summary for performance
 
 intervals = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, Inf)
+intervals_diff = c(-Inf, -5, -3, -2, -1, 0, 1, 2, 3, 5, Inf)
 summary_performance <- data_p %>%
         select(performance_bef, performance_dur, performance_af) %>%
         mutate(perf_diff_dur = performance_dur - performance_bef,
@@ -367,21 +368,25 @@ perf_cnt_af <- summary_performance %>%
 
 perf_cnt_diff_dur <- summary_performance %>%
         select(perf_diff_dur) %>%
-        group_by(interval_dur = cut(perf_diff_dur, breaks = intervals, right=FALSE)) %>%
+        group_by(interval_dur = cut(perf_diff_dur, breaks = intervals_diff, right=FALSE)) %>%
         count() %>%
         spread(interval_dur, n)
 
 perf_cnt_diff_af <- summary_performance %>%
         select(perf_diff_af) %>%
-        group_by(interval_af = cut(perf_diff_af, breaks = intervals, right=FALSE)) %>%
+        group_by(interval_af = cut(perf_diff_af, breaks = intervals_diff, right=FALSE)) %>%
         count() %>%
         spread(interval_af, n)
 
 
-inferential_summary_perf <- bind_rows(perf_cnt_bef, perf_cnt_dur, perf_cnt_af, perf_cnt_diff_dur, perf_cnt_diff_af) %>%
-        mutate(index = c("Before COVID", "During COVID", "After COVID", "Difference during COVID", "Difference after COVID"))
+inferential_summary_perf <- bind_rows(perf_cnt_bef, perf_cnt_dur, perf_cnt_af) %>%
+        mutate(index = c("Before COVID", "During COVID", "After COVID"))
+
+inferential_summary_perf_diff <- bind_rows(perf_cnt_diff_dur, perf_cnt_diff_af) %>%
+        mutate(index = c("Difference During COVID", "Difference After COVID"))
 
 inferential_summary_perf
+inferential_summary_perf_diff
 ```
 
 ```{r}
@@ -408,9 +413,33 @@ source_cnt_af <- summary_learningsources %>%
         spread(source.af, n)
 
 inferential_summary_sources <- bind_rows(source_cnt_bef, source_cnt_dur, source_cnt_af) %>%
-        mutate(index = c("Before COVID", "During COVID", "After COVID"))
+        mutate(index = c("Before COVID", "During COVID", "After COVID")) %>%
+        select(index, External, Internal)
+
+sources_diff_dur <- summary_learningsources %>%
+        group_by(source.bef, source.dur) %>%
+        count() %>%
+        mutate(from = source.bef,
+               to = source.dur,
+                during = n) %>%
+        ungroup() %>%
+        select(from, to, during)
+
+sources_diff_af <- summary_learningsources %>%
+        group_by(source.bef, source.af) %>%
+        count() %>%
+        mutate(from = source.bef,
+               to = source.af,
+               after = n) %>%
+        ungroup() %>%
+        select(from, to, after)
+
+sources_diff_combined <- bind_cols(sources_diff_dur %>% select(during), sources_diff_af) %>%
+        select(from, to, during, after)
 
 inferential_summary_sources
+sources_diff_combined
+
 
 ```
 
