@@ -332,17 +332,85 @@ cnt_diff_af <- prep_diff %>%
 
 
 appended_diff <- bind_rows(cnt_diff_dur, cnt_diff_af) %>%
-        mutate(index = c("During COVID", "After COVID"))
+        mutate(index = c("Difference During COVID", "Difference After COVID"))
 
 appended_diff
 ```
 
 ```{r}
 # Inferential summary for performance
+
+intervals = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, Inf)
+summary_performance <- data_p %>%
+        select(performance_bef, performance_dur, performance_af) %>%
+        mutate(perf_diff_dur = performance_dur - performance_bef,
+               perf_diff_af = performance_af - performance_bef)
+
+
+perf_cnt_bef <- summary_performance %>%
+        select(performance_bef) %>%
+        group_by(interval_bef = cut(performance_bef, breaks = intervals, right=FALSE)) %>%
+        count() %>%
+        spread(interval_bef, n)
+
+perf_cnt_dur <- summary_performance %>%
+        select(performance_dur) %>%
+        group_by(interval_dur = cut(performance_dur, breaks = intervals, right=FALSE)) %>%
+        count() %>%
+        spread(interval_dur, n)
+
+perf_cnt_af <- summary_performance %>%
+        select(performance_af) %>%
+        group_by(interval_af = cut(performance_af, breaks = intervals, right=FALSE)) %>%
+        count() %>%
+        spread(interval_af, n)
+
+perf_cnt_diff_dur <- summary_performance %>%
+        select(perf_diff_dur) %>%
+        group_by(interval_dur = cut(perf_diff_dur, breaks = intervals, right=FALSE)) %>%
+        count() %>%
+        spread(interval_dur, n)
+
+perf_cnt_diff_af <- summary_performance %>%
+        select(perf_diff_af) %>%
+        group_by(interval_af = cut(perf_diff_af, breaks = intervals, right=FALSE)) %>%
+        count() %>%
+        spread(interval_af, n)
+
+
+inferential_summary_perf <- bind_rows(perf_cnt_bef, perf_cnt_dur, perf_cnt_af, perf_cnt_diff_dur, perf_cnt_diff_af) %>%
+        mutate(index = c("Before COVID", "During COVID", "After COVID", "Difference during COVID", "Difference after COVID"))
+
+inferential_summary_perf
 ```
 
 ```{r}
 # Inferential summary for learning sources
+summary_learningsources <- data_p %>%
+        select(source.bef, source.dur, source.af)
+
+source_cnt_bef <- summary_learningsources %>%
+        select(source.bef) %>%
+        group_by(source.bef) %>%
+        count() %>%
+        spread(source.bef, n)
+
+source_cnt_dur <- summary_learningsources %>%
+        select(source.dur) %>%
+        group_by(source.dur) %>%
+        count() %>%
+        spread(source.dur, n)
+
+source_cnt_af <- summary_learningsources %>%
+        select(source.af) %>%
+        group_by(source.af) %>%
+        count() %>%
+        spread(source.af, n)
+
+inferential_summary_sources <- bind_rows(source_cnt_bef, source_cnt_dur, source_cnt_af) %>%
+        mutate(index = c("Before COVID", "During COVID", "After COVID"))
+
+inferential_summary_sources
 
 ```
 
