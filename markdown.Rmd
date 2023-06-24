@@ -3,6 +3,9 @@ title: "Survey Markdown"
 author: "Group 16"
 date: "2023-06-11"
 output: pdf_document
+toc: true
+toc_float: false
+toc_depth: 4
 ---
 
 ```{r}
@@ -64,11 +67,14 @@ data_p$source.dur = as.factor(data_p$source.dur)
 data_p$source.bef = as.factor(data_p$source.bef)
 data_p$source.af = as.factor(data_p$source.af)
 
+data_p[c(5,38), c("ects.fail.dur", "ects.fail.bef", "ects.fail.af", 
+                  "semesters.dur", "semesters.bef", "semesters.af")] <- NA
+
 #remove NaN
 data_p = na.omit(data_p)
 
 ```
-
+## Exploration
 ### What was the average time required for test preparation during and before/after the pandemic (in hours)
 
 1. `pivot_longer`: This function is used to convert the data frame `data_p` from wide format to long format. It takes three columns (`test.prep.bef`, `test.prep.dur`, `test.prep.af`) and pivots them into two columns: `Period` and `Hours`. The `Period` column contains the names of the original three columns, and the `Hours` column contains the corresponding values.
@@ -108,7 +114,7 @@ print(statistics)
 
 # Create a boxplot for each column
 # we exclude row 21 because of unrealistic values
-ggplot(data_p[-20,]) +
+ggplot(data_p[-19,]) +
   geom_boxplot(aes(x = "Before", y = test.prep.bef), fill = "lightblue", color = "black") +
   geom_boxplot(aes(x = "During", y = test.prep.dur), fill = "lightgreen", color = "black") +
   geom_boxplot(aes(x = "After", y = test.prep.af), fill = "lightyellow", color = "black") +
@@ -207,6 +213,8 @@ In this plot, we analyze the performance of students in three periods. We examin
 
 The average performance ratio before COVID was 1.13, during COVID it was 1.0, and after COVID it was 1.11. The performance during COVID was the best. However, we notice an improvement in performance when comparing the data from before and after COVID. It is important to note that the chart depicting the data from before COVID is not as well-populated as the others. This is because only a few students started their studies during COVID. Nonetheless, we observe that over five students achieved a performance ratio of about 2, and we also see a few students with a similar performance ratio after COVID.
 
+### What was your main source of learning for Test preparation during/before/after the pandemic?
+
 
 ```{r}
 # Calculate the frequency of each label
@@ -263,7 +271,7 @@ subplot <- grid.arrange(pie_plot,pie_plot2,pie_plot3, nrow = 1,
 subplot
 
 ```
-In this pie chart, we observe a noticeable rise in the demand for external lecture data, such as YouTube videos or online papers. Before COVID, only 18.92% of students primarily consumed external learning material not provided by the university. However, during COVID, this percentage increased significantly to over 37.84%. Even after COVID, a substantial portion, 24.32%, continued to rely on external sources.
+In this pie chart, we observe a noticeable rise in the demand for external lecture data, such as YouTube videos or online papers. Before COVID, only 17.14% of students primarily consumed external learning material not provided by the university. However, during COVID, this percentage increased significantly to over 37.14%. Even after COVID, a substantial portion, 20%, continued to rely on external sources.
 
 This increase in demand for external material, coupled with the observed improvement in study performance and the perceived time efficiency during the COVID period, suggests that these external resources were more beneficial to students than the lecture materials provided by professors.
 
@@ -360,7 +368,7 @@ inferential_summary_preparation_diff %>%
                 subtitle = md("*Amount of students who prepared x hours more/less for an exam for during and after COVID, base before COVID*")
         ) %>%
         data_color(
-                columns = 2:10,
+                columns = 2:9,
                 fn = col_numeric(
                   palette = summary_palette,
                   domain = c(0, 17)
@@ -560,4 +568,70 @@ As already expected by the last table students either stayed on external learnin
 pre COVID or were likely to switch to external sources during COVID otherwise with 8 students switching from internal sources
 to external ones compared to 1 student switching from external sources to internal ones during COVID. After COVID the situation
 normalized itself partly with some students staying on external sources.
+
+## Inference
+
+### Prep time
+
+```{r}
+shapiro.test(data_p$test.prep.bef)
+shapiro.test(data_p$test.prep.af)
+shapiro.test(data_p$test.prep.dur)
+```
+
+The tests tell us that none of the periods is normally distributed which we should keep in mind when choosing, what kind of test we should use. We can use the Kruskal-Wallis test to check for significant changes in medians between the three groups.
+
+In the analysis of multiple groups, it's imperative to control for the multiple comparisons problem. This statistical issue arises when multiple pairwise tests are conducted simultaneously. With an increased number of tests, there's an elevated probability of a Type I error -- falsely identifying a significant difference when there isn't one.
+
+The Kruskal-Wallis test offers an effective solution to this problem. Rather than making pairwise comparisons, this test considers all groups simultaneously and evaluates the overall null hypothesis: the assertion that all groups originate from the same population, or equivalently, their medians are identical.
+
+The primary advantage of the Kruskal-Wallis test is that it provides a holistic view of the dataset and determines if there's a significant difference in the medians of three or more independent groups. This approach avoids inflating the Type I error rate, as it's a single test. If the Kruskal-Wallis test result is significant, it implies that at least one group diverges from the others. Subsequent pairwise comparisons can then be conducted to identify specifically which groups exhibit a significant difference.
+
+Applying the Kruskal-Wallis test before performing pairwise comparisons ensures that we only delve into the specifics if there's substantial evidence of a difference among the groups. This stepwise procedure effectively controls the Type I error rate and mitigates the risks associated with the multiple comparisons problem.
+
+```{r}
+kruskal.test(list(data_p$test.prep.bef, data_p$test.prep.dur, data_p$test.prep.af))
+```
+
+Based on the Kruskal-Wallis test we conclude that there is no significant shift in the medians between the groups. So there are no significant differences between study times for each period
+
+### Performance
+
+```{r}
+data_p_noinf <- subset(data_p, !is.infinite(data_p[, "performance_dur"]))
+data_p_noinf <- subset(data_p_noinf, !is.infinite(data_p_noinf[, "performance_bef"]))
+data_p_noinf <- subset(data_p_noinf, !is.infinite(data_p_noinf[, "performance_af"]))
+data_p_noinf <- data_p_noinf[complete.cases(data_p_noinf[, c("performance_bef", "performance_dur", "performance_af")]), ]
+```
+
+
+```{r}
+shapiro.test(data_p_noinf$performance_dur)
+shapiro.test(data_p_noinf$performance_bef)
+shapiro.test(data_p_noinf$performance_af)
+```
+
+Here we also see data that is not normally distributed so we can use the kruskal wallis test again.
+
+```{r}
+kruskal.test(list(data_p_noinf$performance_bef, data_p_noinf$performance_af, data_p_noinf$performance_dur))
+```
+
+The kruskal wallis  rejects the hypothesis that there is a difference between the time periods (before, during, after covid).
+
+### Materials used
+
+```{r}
+data_materials <- data_p %>%
+     pivot_longer(
+         cols = c("source.dur", "source.bef", "source.af"), 
+         names_to = "period",
+         values_to = "source"
+     )
+
+contingency_table <- table(data_materials$period, data_materials$source)
+chisq.test(contingency_table)
+```
+
+The p-value suggests that there is no association between the period and sources used for studying.
 
